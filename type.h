@@ -1,5 +1,6 @@
 #include<stdlib.h>
 #include<stdio.h>
+
 struct jcb{
 	int num;
     char name[10];    //作业名 
@@ -27,3 +28,25 @@ struct pcb{
 typedef struct pcb PCB;    //定义结构体变量 
 
 const int pcb_size = sizeof(struct pcb);
+
+typedef int Status;
+ 
+typedef struct freearea//定义一个空闲区说明表结构
+{
+	int ID;   //分区号
+	long size;   //分区大小
+	long address; //分区地址
+	int state;   //状态
+}ElemType;
+ 
+//----------  线性表的双向链表存储结构  ------------
+typedef struct DuLNode //double linked list
+{
+	ElemType data; 
+	struct DuLNode *prior; //前趋指针
+	struct DuLNode *next;  //后继指针
+}DuLNode,*DuLinkList;
+ 
+DuLinkList block_first; //头结点
+DuLinkList block_last;  //尾结点
+
