@@ -4,8 +4,8 @@
 CPP      = g++.exe -D__DEBUG__
 CC       = gcc.exe -D__DEBUG__
 WINDRES  = windres.exe
-OBJ      = veiw.o algorithm.o
-LINKOBJ  = veiw.o algorithm.o
+OBJ      = veiw.o algorithm.o memAllocation.o
+LINKOBJ  = veiw.o algorithm.o memAllocation.o
 LIBS     = -L"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/lib" -L"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -g3
 INCS     = -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/include" -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include"
 CXXINCS  = -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/include" -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"D:/工具/学习类/数据结构/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++"
@@ -29,3 +29,6 @@ veiw.o: veiw.cpp
 
 algorithm.o: algorithm.cpp
 	$(CPP) -c algorithm.cpp -o algorithm.o $(CXXFLAGS)
+
+memAllocation.o: memAllocation.cpp
+	$(CPP) -c memAllocation.cpp -o memAllocation.o $(CXXFLAGS)

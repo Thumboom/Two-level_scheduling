@@ -1,5 +1,6 @@
 #include"type.h"
 #include"algorithm.h"
+#include"memAllocation.h"
 int jcb_alg = 1;//选择作业调度算法 
 int pcb_alg = 1;//选择进程调度算法 
 int allc_alg = 1;//选择内存分配算法 
@@ -7,12 +8,16 @@ int allc_alg = 1;//选择内存分配算法
 int num;//作业数量 
 int f_num = 0; //已完成作业数 
 int time;
+int tape_num = 4;
 struct jcb *p_jcb = NULL;
 //jcb_creating 用来保存预输入的作业信息 
 struct jcb_list *jcb_creating = NULL , *jcb_ready = NULL, *jcb_finish = NULL,*jcb_run = NULL;
 			 
 struct pcb *p_pcb = NULL;
 struct pcb_list *pcb_creating = NULL, *pcb_ready, *pcb_finish = NULL;
+
+struct tape_list* tapelist = NULL;
+
 
 DuLinkList block_first; //头结点
 DuLinkList block_last;  //尾结点
@@ -39,25 +44,69 @@ void input_choice(){
 void init(){
 	jcb_creating = (jcb_list*)malloc(jcb_list_size);
 	jcb_creating->head = NULL;
+	jcb_creating->num = 0; 
 	
 	jcb_ready = (jcb_list*)malloc(jcb_list_size);
 	jcb_ready->head = NULL;
+	jcb_ready->num = 0;
 	
 	jcb_finish = (jcb_list*)malloc(jcb_list_size);
 	jcb_finish->head = NULL;
+	jcb_finish->num = 0;
+	
 	
 	jcb_run = (jcb_list*)malloc(jcb_list_size);
 	jcb_run->head = NULL;
+	jcb_run->num = 0;
+	
 	
 	pcb_creating = (pcb_list*)malloc(pcb_list_size);
 	pcb_creating->head = NULL;
+	pcb_creating->num = 0;
+	
 	
 	pcb_finish = (pcb_list*)malloc(pcb_list_size);
 	pcb_finish->head = NULL;
+	pcb_finish->num = 0;
 	
 	pcb_ready = (pcb_list*)malloc(pcb_list_size);
 	pcb_ready->head = NULL;
+	pcb_ready->num = 0;
 	
+	block_first = (DuLinkList)malloc(DuLinkList_size);
+//	block_first->data = NULL;
+	block_first->prior = NULL;
+	block_first->next = NULL;
+	Initblock();
+	
+	
+	tapelist = (tape_list*) malloc(tape_list_size);
+	tapelist->head = NULL;
+	tapelist->end = NULL;
+	tapelist->num = 0;
+	
+	
+	tape* ptape = NULL;
+	for(int i = 0; i < tape_num; i ++)
+	{
+		ptape = (tape*)malloc(tape_size);
+		ptape->id = i;
+		ptape->state = 0;
+		ptape->link = NULL;
+		if(tapelist->head == NULL)
+		{
+			tapelist->num ++;
+			tapelist->head = ptape;
+			tapelist->end = ptape;
+		}
+		else
+		{
+			tapelist->num ++; 
+			tapelist->end->link = ptape;
+			tapelist->end = ptape;
+		}
+		
+	}
 	
 	
 //	printf("jcb_creating ->head%d", &jcb_creating);
@@ -82,7 +131,7 @@ void input_jcb(){
 		scanf("%d%d%d%d%s",&p_jcb->arrival_time,&p_jcb->need_time,&p_jcb->size,
 								&p_jcb->resource,&p_jcb->name);
 		
-		p_jcb->num = i;
+		p_jcb->id = i;
 		p_jcb->link = NULL;
 		
 		if(jcb_creating->head == NULL)
@@ -96,6 +145,8 @@ void input_jcb(){
 			temp->link = p_jcb;
 			temp = temp->link;
 		}
+		
+		jcb_creating->num ++;
 			
 		
 	}
@@ -104,12 +155,12 @@ void input_jcb(){
 }
 
 void output_pcb(){
-	p_pcb = pcb_creating->head;
+	p_pcb = pcb_ready->head;
 			printf("\n进程编号 | 进程名 | 进程到达时间 | 所需运行时间 | 所需磁带机数量 | \n");
 	while(p_pcb != NULL)
 	{
 		printf("\n  %d        %s         %d            %d              %d \n", 
-								p_pcb->num, p_pcb->name,  p_pcb->arrival_time,p_pcb->need_time, 
+								p_pcb->id, p_pcb->name,  p_pcb->arrival_time,p_pcb->need_time, 
 							p_pcb->resource );
 		p_pcb = p_pcb->link;
 	 } 
@@ -129,7 +180,7 @@ void outputAll(){
 		while(p_jcb != NULL)
 		{
 			printf("\n  %d        %s         %d            %d              %d               %d \n", 
-									p_jcb->num, p_jcb->name,  p_jcb->arrival_time,p_jcb->need_time, p_jcb->size,
+									p_jcb->id, p_jcb->name,  p_jcb->arrival_time,p_jcb->need_time, p_jcb->size,
 								p_jcb->resource );
 			p_jcb = p_jcb->link;
 		 } 
@@ -139,9 +190,7 @@ void outputAll(){
 
 void timer(){
 	
-	
-	
-	for(time = jcb_creating->head->arrival_time; f_num < num ; time++)
+	for(time = jcb_creating->head->arrival_time; pcb_finish->num < num ; time++)
 	{
 		//转换单位 
 		if( time % 100 == 60 )
@@ -153,13 +202,9 @@ void timer(){
 		
 		start_work();
 		 
-		if(jcb_creating->head == NULL)
-			break;
-		
-	
-		
+//		if(jcb_creating->head == NULL)
+//			break;
 	}
-	
 	
 }
 
@@ -169,6 +214,7 @@ int main(){
 	input_choice();
 
 	timer();
+	output_pcb();
 	outputAll();
 	return 0;
 }

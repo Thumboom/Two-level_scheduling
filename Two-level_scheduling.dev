@@ -28,8 +28,8 @@ Folders=
 IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
-CompilerSettings=1000000000000000000000000
-UnitCount=5
+CompilerSettings=1000000000000000001000000
+UnitCount=6
 
 [VersionInfo]
 Major=1
@@ -92,6 +92,16 @@ BuildCmd=
 
 [Unit5]
 FileName=view.h
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit6]
+FileName=memAllocation.cpp
 CompileCpp=1
 Folder=
 Compile=1

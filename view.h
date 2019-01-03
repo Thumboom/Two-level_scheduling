@@ -4,6 +4,7 @@ extern struct jcb_list *jcb_creating , *jcb_ready, *jcb_finish,*jcb_run ;
 			 
 extern struct pcb *p_pcb ;
 extern struct pcb_list *pcb_creating , *pcb_ready,*pcb_finish;
+extern struct tape_list* tapelist;
  
 extern DuLinkList block_first; //头结点
 extern DuLinkList block_last;  //尾结点
