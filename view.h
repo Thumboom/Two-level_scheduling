@@ -13,5 +13,6 @@ extern int jcb_alg;//选择作业调度算法
 extern int pcb_alg;//选择进程调度算法 
 extern int allc_alg;//选择内存分配算法 
 extern int time;
+extern int piece;
 
 void output_pcb();

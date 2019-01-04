@@ -1,14 +1,17 @@
 #include"type.h"
 #include"algorithm.h"
 #include"memAllocation.h"
+#include<string.h>
 int jcb_alg = 1;//选择作业调度算法 
 int pcb_alg = 1;//选择进程调度算法 
 int allc_alg = 1;//选择内存分配算法 
 
-int num;//作业数量 
+int num = 5;//作业数量 
 int f_num = 0; //已完成作业数 
 int time;
 int tape_num = 4;
+int piece = 1;
+
 struct jcb *p_jcb = NULL;
 //jcb_creating 用来保存预输入的作业信息 
 struct jcb_list *jcb_creating = NULL , *jcb_ready = NULL, *jcb_finish = NULL,*jcb_run = NULL;
@@ -29,6 +32,7 @@ void input_choice(){
 	printf("************************************\n");
 	printf("请选择作业调度算法：\n");
 	printf("** 1)先来先服务算法  2)最小作业优先算法 **\n");
+	printf("** 3)高响应比优先算法                   **\n");
 	scanf("%d", &jcb_alg);
 	
 	printf("请选择内存分配算法：\n");
@@ -37,7 +41,16 @@ void input_choice(){
 	
 	printf("请选择进程调度算法：\n");
 	printf("** 1)先来先服务算法  2)最小进程优先算法 **\n");
+	printf("** 3)时间片轮转算法                     **\n");
 	scanf("%d", &pcb_alg); 
+	if(pcb_alg == 3)
+	{
+		printf("请输入时间片大小： ");
+		scanf("%d", &piece);
+		
+	 } 
+	
+	
 	input_jcb();
 }
 
@@ -112,6 +125,82 @@ void init(){
 //	printf("jcb_creating ->head%d", &jcb_creating);
 }
 
+
+void initData(){
+	
+	jcb *temp = NULL;
+	for(int i = 0; i < num; i ++)
+	{
+		
+		p_jcb = (struct jcb*)malloc(jcb_size);
+	
+		if( i == 0 )
+		{
+			
+			p_jcb->arrival_time = 1000;
+			p_jcb->need_time = 25;
+			p_jcb->size = 15;
+			p_jcb->resource = 2;
+			strcpy(p_jcb->name, "job1");
+		}
+		else if( i == 1 )
+		{
+			
+			p_jcb->arrival_time = 1020;
+			p_jcb->need_time = 30;
+			p_jcb->size = 60;
+			p_jcb->resource = 1;
+			strcpy(p_jcb->name, "job2");
+		}
+		else if( i == 2 )
+		{
+			
+			p_jcb->arrival_time = 1030;
+			p_jcb->need_time = 10;
+			p_jcb->size = 50;
+			p_jcb->resource = 3;
+			strcpy(p_jcb->name, "job3");
+		}
+		else if( i == 3 )
+		{
+			
+			p_jcb->arrival_time = 1035;
+			p_jcb->need_time = 20;
+			p_jcb->size = 10;
+			p_jcb->resource = 2;
+			strcpy(p_jcb->name, "job4");
+		}
+		else if ( i == 4 )
+		{
+			
+			p_jcb->arrival_time = 1040;
+			p_jcb->need_time = 15;
+			p_jcb->size = 30;
+			p_jcb->resource = 2;
+			strcpy(p_jcb->name, "job5");
+		}
+		p_jcb->id = i;
+		p_jcb->link = NULL;
+		
+		if(jcb_creating->head == NULL)
+		{
+			jcb_creating->head = p_jcb;
+			temp = p_jcb;
+			
+		} 
+		else
+		{
+			temp->link = p_jcb;
+			temp = temp->link;
+		}
+		
+		jcb_creating->num ++;
+			
+		
+	}
+	
+}
+
 void input_jcb(){
 	
 	printf("\n请输入作业数量: ");
@@ -119,6 +208,9 @@ void input_jcb(){
 	
 	
 	jcb *temp = NULL;
+	
+	initData();
+	return;
 	
 	
 	printf("\n请分别输入作业到达时间，所需运行时间， 作业所需内存(KB)， 所需磁带机数量，作业名，\n");
@@ -148,9 +240,7 @@ void input_jcb(){
 		
 		jcb_creating->num ++;
 			
-		
 	}
-	
 	 
 }
 
@@ -168,29 +258,46 @@ void output_pcb(){
 	
 }
 
-
+void outputJcb(){
+	p_jcb = jcb_creating->head;
+	printf("\n作业编号 | 作业名 | 作业到达时间 | 所需运行时间 | 作业所需内存(KB) | 所需磁带机数量 | \n");
+	while(p_jcb != NULL)
+	{
+		printf("\n  %d        %s         %d            %d              %d               %d \n", 
+								p_jcb->id, p_jcb->name,  p_jcb->arrival_time,p_jcb->need_time, p_jcb->size,
+							p_jcb->resource );
+		p_jcb = p_jcb->link;
+	 } 
+}
 
 
 void outputAll(){	
 	
-	p_jcb = jcb_ready->head;
-	printf("\n作业编号 | 作业名 | 作业到达时间 | 所需运行时间 | 作业所需内存(KB) | 所需磁带机数量 | \n");
-	if(jcb_ready->head != NULL) 
+	p_jcb = jcb_finish->head;
+	int sum = 0;
+	double avg = 0;
+	
+	
+		printf("\n作业编号 | 作业名 | 作业到达时间 | 所需运行时间 | 调入内存时间 | 结束时间 | 作业所需内存(KB) | 所需磁带机数量 | \n");
+	while(p_jcb != NULL)
 	{
-		while(p_jcb != NULL)
-		{
-			printf("\n  %d        %s         %d            %d              %d               %d \n", 
-									p_jcb->id, p_jcb->name,  p_jcb->arrival_time,p_jcb->need_time, p_jcb->size,
-								p_jcb->resource );
-			p_jcb = p_jcb->link;
-		 } 
-	} 
+		printf("\n  %d        %s         %d            %d            %d            %d         %d            %d \n", 
+								p_jcb->id, p_jcb->name,  p_jcb->arrival_time,p_jcb->need_time, p_jcb->start_time, 
+								p_jcb->finish_time, p_jcb->size,p_jcb->resource );
+								
+		sum = sum + (p_jcb->finish_time - p_jcb->arrival_time);
+		p_jcb = p_jcb->link;
+		
+	 } 
+	 
+	 avg = (sum * 1.0 )/ num;
+	 printf("平均周转时间%f", avg);
 }
 
 
 void timer(){
 	
-	for(time = jcb_creating->head->arrival_time; pcb_finish->num < num ; time++)
+	for(time = jcb_creating->head->arrival_time; jcb_finish->num < num ; time++)
 	{
 		//转换单位 
 		if( time % 100 == 60 )
@@ -198,12 +305,10 @@ void timer(){
 			time = time / 100 * 100 + 100;
 		}
 		
-		printf("time == %d\n", time); 
+		printf("-----------------%d-----------------\n", time); 
 		
 		start_work();
 		 
-//		if(jcb_creating->head == NULL)
-//			break;
 	}
 	
 }
@@ -214,7 +319,7 @@ int main(){
 	input_choice();
 
 	timer();
-	output_pcb();
+//	output_pcb();
 	outputAll();
 	return 0;
 }

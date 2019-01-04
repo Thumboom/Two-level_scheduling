@@ -1,10 +1,10 @@
 #include"type.h"
 #include"view.h"
-#define Free 0 //空闲状态
+#define Free -1 //空闲状态
 #define Busy 1 //已用状态
 #define OK 1    //完成
 #define ERROR 0 //出错
-#define MAX_length 640 //最大内存空间为640KB
+#define MAX_length 100 //最大内存空间为100KB
 Status alloc(int);//内存分配
 Status free(int); //内存回收
 Status First_fit(int,int);//首次适应算法
@@ -22,7 +22,7 @@ Status Initblock()//开创带头结点的内存空间链表,尾结点作为内存块
 	block_last->next=NULL;
 	block_last->data.address=0;
 	block_last->data.size=MAX_length;
-	block_last->data.ID=0;
+	block_last->data.ID=Free;
 	block_last->data.state=Free;
 	return OK;
 }

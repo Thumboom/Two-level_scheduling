@@ -7,15 +7,80 @@
 jcb* pre_jcb = NULL;
 int isRunning = 0;//是否有进程正在执行 
 pcb* running_pcb = NULL;//当前正在执行的进程
- 
+int runtime = 0; //记录进程轮转法中某一进程已运行时间 
 
-jcb* job_fifs( ){
+ 
+//先来先服务 
+jcb* job_fcfs( ){
 	jcb* p = jcb_ready->head; 
 	pre_jcb = p;
 	return p;	
-		
-} 
+}
 
+//最短作业优先 
+jcb* job_sjf(){
+	jcb*p = jcb_ready->head;
+	
+	jcb* temp = jcb_ready->head;
+	jcb* pre = NULL;
+	pre_jcb = temp;
+	
+	while(temp != NULL)
+	{
+		if(temp->need_time < p->need_time)
+		{
+			p = temp;
+			pre_jcb = pre;
+		 } 
+		 
+		 pre = temp;
+		 temp = temp->link;
+	}
+	
+	return p; 
+	
+	
+}
+
+//高响应比优先 
+
+jcb*  jcb_hrrn(){
+	double higest = -1;
+	double temp = 0;
+	jcb* target = jcb_ready->head;
+	jcb* cur = jcb_ready->head;
+	jcb* pre; 
+	
+	pre_jcb = cur;
+	pre = cur;
+	if( cur == NULL )
+		return NULL;
+	higest = (time - target->arrival_time + target->need_time) * 1.0 
+				/ target->need_time;
+				
+				
+	while( cur != NULL)
+	{
+		temp = (time - cur->arrival_time + cur->need_time) * 1.0 
+				/ cur->need_time;
+				
+		if( temp > higest)
+		{
+			pre_jcb = pre;
+			target = cur;
+			higest = temp;
+		}
+		pre = cur;
+		cur = cur->link;
+		
+	}
+	
+	return target;	
+	 
+}
+ 
+
+//为作业分配内存 
 Status mem_allocation(jcb* pjcb){
 	return try_alloc(pjcb->id, pjcb->size);
 }
@@ -58,8 +123,9 @@ jcb* job_schedule(){
 	jcb* p= NULL,*temp = NULL;
 	
 	switch(jcb_alg){
-		case 1:p = job_fifs();break; 
-		
+		case 1: p = job_fcfs(); break; 
+		case 2: p = job_sjf();  break;
+		case 3: p = jcb_hrrn(); break;
 	}
 	return p;
 }
@@ -70,6 +136,10 @@ pcb* new_pcb(jcb* pjcb) {
 	
 	ppcb = (pcb*) malloc(pcb_size);
 	ppcb->id = pjcb->id;
+	//初始化char数组，不然会出现乱码 
+	for(int i = 0; i < 10; i ++)
+		ppcb->name[i] = '\0';
+	
 	strncpy(ppcb->name, pjcb->name,strlen(pjcb->name));
 	ppcb->arrival_time = -1;
 	ppcb->need_time = pjcb->need_time;
@@ -91,68 +161,72 @@ void put_in_pcb_creating(){
 	pjcb = job_schedule();
 	pcb* ppcb = NULL;
 	 //判断是否有足够内存分配----------------- 
-	if(pjcb == NULL || mem_allocation(pjcb) == ERROR) return;
-	else 
+	 
+	while( pjcb != NULL)
 	{
-		ppcb = new_pcb(pjcb);
-		
-		if( pcb_creating->head == NULL)
+		if( mem_allocation(pjcb) == ERROR) break;
+		else 
 		{
-			pcb_creating->head = ppcb;
-			pcb_creating->end = ppcb;
-		}
-		else
-		{
-			pcb_creating->end->link = ppcb;
-			pcb_creating->end = ppcb;
-		}
-		 
-		pcb_creating->num ++; 
-		 
-		 //从后备队列中删除该作业，加入到运行队列中 
-		if(pjcb != NULL) 
-		{
-			pjcb->start_time = time;
+			ppcb = new_pcb(pjcb);
 			
-			if( pjcb == jcb_ready->end)
+			if( pcb_creating->head == NULL)
 			{
-				//判断就绪队列中是否只有一个元素 
-				if( pre_jcb == pjcb)
-					jcb_ready->end = NULL;
-				else 	
-					jcb_ready->end = pre_jcb; 
+				pcb_creating->head = ppcb;
+				pcb_creating->end = ppcb;
 			}
-				
-			
-			if(jcb_ready->head == pjcb)
-				jcb_ready->head = pjcb->link;
 			else
 			{
-				pre_jcb->link = pjcb->link;
-				
+				pcb_creating->end->link = ppcb;
+				pcb_creating->end = ppcb;
 			}
-			
-				
-			jcb_ready->num--;	
-			
-			if(jcb_run->head == NULL)
+			 
+			pcb_creating->num ++; 
+			 
+			 //从后备队列中删除该作业，加入到运行队列中 
+			if(pjcb != NULL) 
 			{
-				jcb_run->head = pjcb;
-				jcb_run->end = pjcb;
-			}	
-			else
-			{
-				jcb_run->end->link = pjcb;
-				jcb_run->end = pjcb;
+				pjcb->start_time = time;
 				
+				if( pjcb == jcb_ready->end)
+				{
+					//判断就绪队列中是否只有一个元素 
+					if( pre_jcb == pjcb)
+						jcb_ready->end = NULL;
+					else 	
+						jcb_ready->end = pre_jcb; 
+				}
+					
+				
+				if(jcb_ready->head == pjcb)
+					jcb_ready->head = pjcb->link;
+				else
+				{
+					pre_jcb->link = pjcb->link;
+					
+				}
+				
+					
+				jcb_ready->num--;	
+				
+				if(jcb_run->head == NULL)
+				{
+					jcb_run->head = pjcb;
+					jcb_run->end = pjcb;
+				}	
+				else
+				{
+					jcb_run->end->link = pjcb;
+					jcb_run->end = pjcb;
+					
+				}
+				jcb_run->num++;
+				pjcb->link = NULL;
 			}
-			jcb_run->num++;
-			pjcb->link = NULL;
-		}
 		
+		}
+		pjcb = job_schedule();
 	}
-//	output_pcb();
-	
+
 }
 
 //尝试分配磁带机 
@@ -209,8 +283,50 @@ void pcb_fcfs(pcb* ppcb){
 	
 }
 
+//最短进程优先 
 void pcb_spf(pcb* ppcb){
+	pcb* pre = NULL;
+	pcb* cur = NULL;
 	
+	ppcb->arrival_time = time; 
+	
+	if( pcb_ready->head == NULL )
+	{
+		
+		pcb_ready->head = ppcb;
+		pcb_ready->end = ppcb;
+		ppcb->link = NULL;
+		pcb_ready->num++;
+		return;
+	} 
+	
+	cur = pcb_ready->head;
+	pre = cur;
+	
+	while(cur != NULL && cur->need_time <= ppcb->need_time)
+	{
+		pre = cur;
+		cur = cur->link;
+	}
+	//添加到尾结点 
+	if( cur == NULL )
+	{
+		pcb_ready->end->link = ppcb;
+		pcb_ready->end = ppcb;
+		ppcb->link = NULL;
+	}
+	else if( pre == cur)//添加到头结点 
+	{
+		ppcb->link = pcb_ready->head;
+		pcb_ready->head = ppcb; 
+	} 
+	else //插入到中间
+	{
+		ppcb->link = cur;
+		pre->link = ppcb;	
+	}
+	
+	pcb_ready->num++;
 	
 }
 
@@ -221,6 +337,7 @@ void put_in_ready(pcb* ppcb){
 	{
 		case 1: pcb_fcfs(ppcb)   ; break;	
 		case 2: pcb_spf(ppcb)    ; break;
+		case 3: pcb_fcfs(ppcb)	 ; break; 
 	} 
 }
 
@@ -243,7 +360,7 @@ void put_in_pcb_ready(){
 		{
 			//挂到就绪队列中，并从creating删除
 		
-				ppcb->start_time = time;
+				ppcb->arrival_time = time;
 				
 				if( ppcb == pcb_creating->end)
 				{
@@ -272,6 +389,7 @@ void put_in_pcb_ready(){
 //				ppcb->link = NULL;
 				put_in_ready(ppcb);
 				ppcb = next_pcb;
+				output_pcb();
 				
 		} 
 		else
@@ -312,7 +430,177 @@ void release(pcb* ppcb){
 	
 }
 
+
+
+void RR(){
+	
+	if(isRunning == 1 && runtime < piece)
+	{
+		running_pcb->run_time ++;
+		runtime ++;
+		printf("\n当前执行的进程%d, 所需时间%d，已执行时间%d\n", running_pcb->id, 
+									running_pcb->need_time, running_pcb->run_time );
+		
+		if( running_pcb->run_time == running_pcb->need_time)
+		{
+			isRunning = 0;
+			//释放对应资源
+			running_pcb->finish_time = time + 1;//1分钟末执行完即下一分钟初执行完 
+			release(running_pcb);
+			runtime = 0;
+		
+		
+			 if( pcb_finish->head == NULL)
+			 {
+			 	pcb_finish->head = running_pcb;
+			 	pcb_finish->end = running_pcb;
+			 	
+			  } 
+			  else
+			  {
+			  	pcb_finish->end->link = running_pcb;
+			  	pcb_finish->end = running_pcb;
+			  }
+			  
+			  pcb_finish->num++;
+			  
+			  running_pcb->link = NULL;
+			  running_pcb = NULL;
+			  
+			  //-------
+			if( pcb_ready->head != NULL)
+			{
+				running_pcb = pcb_ready->head;
+				pcb_ready->head = running_pcb->link;
+				
+				if(pcb_ready->num == 1)
+				{
+					pcb_ready->end = NULL;
+				}
+				
+				pcb_ready->num --;
+				isRunning = 1;
+			 }
+		 
+		}
+		
+ 	}
+	 else if( isRunning == 1 && runtime == piece)
+	 {
+	 	//时间片完，将当前运行的进程挂到就绪队列末尾 
+	 	runtime = 0;
+	 	
+	 	if(pcb_ready->end != NULL)
+	 	{
+	 		pcb_ready->end->link = running_pcb;
+	 		pcb_ready->end = running_pcb;
+	 		
+		 }
+		 else
+		 {
+		 	pcb_ready->head = running_pcb;
+		 	pcb_ready->end = running_pcb;
+		 	
+		 }
+		 
+		 running_pcb->link = NULL;
+		 running_pcb = NULL;
+		 
+		 isRunning = 0;
+		 pcb_ready->num ++;
+	 	
+	  }
+	  
+	  if( isRunning == 0)
+	  {
+	  		
+	  		running_pcb = pcb_ready->head; 
+	  		if(running_pcb != NULL)
+	  		{
+	  		
+			  	if(running_pcb->arrival_time == -1)
+				  running_pcb->arrival_time = time;	
+	  			pcb_ready->head = running_pcb->link;
+	  			
+	  			isRunning = 1;
+	  			running_pcb->run_time ++;
+	  			printf("\n当前执行的进程%d, 所需时间%d，已执行时间%d\n", running_pcb->id, 
+									running_pcb->need_time, running_pcb->run_time );
+				if(pcb_ready->num == 1)
+				{
+					pcb_ready->end = NULL;
+				}
+				
+				pcb_ready->num --;
+		  		runtime ++;	
+		  		
+		  		
+		  	if( running_pcb->run_time == running_pcb->need_time)
+			{
+				isRunning = 0;
+				//释放对应资源
+				running_pcb->finish_time = time + 1;//1分钟末执行完即下一分钟初执行完 
+				release(running_pcb);
+				runtime = 0;
+			
+			
+				 if( pcb_finish->head == NULL)
+				 {
+				 	pcb_finish->head = running_pcb;
+				 	pcb_finish->end = running_pcb;
+				 	
+				  } 
+				  else
+				  {
+				  	pcb_finish->end->link = running_pcb;
+				  	pcb_finish->end = running_pcb;
+				  }
+				  
+				  pcb_finish->num++;
+				  
+				  running_pcb->link = NULL;
+				  running_pcb = NULL;
+				  
+				  //-------
+				if( pcb_ready->head != NULL)
+				{
+					running_pcb = pcb_ready->head;
+					pcb_ready->head = running_pcb->link;
+					
+					if(pcb_ready->num == 1)
+					{
+						pcb_ready->end = NULL;
+					}
+					
+					pcb_ready->num --;
+					isRunning = 1;
+				 }
+		 
+			}
+		  		
+		  		
+		  		
+	  			
+			}
+	  	
+	   } 
+ 
+	
+	
+	
+}
+
+
+
+
+
 void run_pcb(){
+	
+	if( pcb_alg == 3)
+	{
+		RR();
+		return;
+	}
 	
 	if(isRunning == 1)//有进程在执行 
 	{
@@ -324,7 +612,7 @@ void run_pcb(){
 			
 			isRunning = 0;
 			//释放对应资源
-			
+			running_pcb->finish_time = time + 1;//1分钟末执行完即下一分钟初执行完 
 			release(running_pcb);
 			
 			
@@ -363,9 +651,6 @@ void run_pcb(){
 			  
 		}
 			
-			
-			 
-			
 		
 	}
 	else
@@ -376,6 +661,7 @@ void run_pcb(){
 			pcb_ready->head = running_pcb->link;
 			
 			isRunning = 1;
+			running_pcb->run_time ++;
 			printf("\n当前执行的进程%d, 所需时间%d，已执行时间%d\n", running_pcb->id, 
 									running_pcb->need_time, running_pcb->run_time );
 			if(pcb_ready->num == 1)
@@ -385,13 +671,106 @@ void run_pcb(){
 			
 			pcb_ready->num --;
 			
-			running_pcb->run_time ++;
-			
-		 } 
+			} 
 		
 	}
 	
 } 
+
+
+//将完成的作业从运行中队列挂到已完成队列，释放相应的pcb 
+void put_in_jcb_finish(){
+	
+	pcb* ppcb = pcb_finish->head;
+	pcb* next_pcb = NULL;
+	int id;
+	jcb* pjcb = NULL;
+	jcb* pre = NULL;
+	jcb* next = NULL; 
+	
+	while(ppcb != NULL)
+	{
+		id = ppcb->id;
+		pjcb = jcb_run->head;
+		pre = pjcb;
+		while( pjcb != NULL)
+		{
+			
+			next = pjcb->link;
+			if( pjcb->id == id)
+			{
+				pjcb->finish_time = ppcb->finish_time;
+				
+				if( jcb_finish->head == NULL)
+				{
+					jcb_finish->head = pjcb;
+					jcb_finish->end = pjcb;
+					
+				}
+				else
+				{
+					jcb_finish->end->link = pjcb;
+					jcb_finish->end = pjcb;
+				}
+				
+				jcb_finish->num ++;
+				
+				//从运行队列中删除 
+				if( pjcb == jcb_run->end)
+				{
+					if(pre == pjcb)
+						jcb_run->end = NULL;
+					else
+						jcb_run->end = pre;
+						
+				}
+				
+				if( jcb_run->head == pjcb)
+				{
+					jcb_run->head = pjcb->link;
+					pre = jcb_run->head;
+				}
+				else
+				{
+					pre->link = pjcb->link;
+				}
+				
+				jcb_run->num--;
+				pjcb->link = NULL;
+				pjcb = next;
+				
+			
+				
+				
+			}
+			else
+			{
+				pre = pjcb;
+				pjcb = next;
+			}
+		
+		}
+		
+		next_pcb = ppcb->link;
+		
+		pcb_finish->head = next_pcb;
+		if(next_pcb == pcb_finish->end)
+		{
+			pcb_finish->end = next_pcb;
+		} 
+		else if(next_pcb == NULL)
+		{
+			pcb_finish->end = NULL;
+		}
+		
+		pcb_finish->num --;
+		//释放对应进程空间
+		free(ppcb);
+		ppcb = next_pcb;
+		
+	}
+	 
+}
 
 
 void start_work( ){
@@ -401,5 +780,6 @@ void start_work( ){
 	put_in_pcb_ready();
 //	output_pcb();
 	run_pcb();
+	put_in_jcb_finish();
 }
 

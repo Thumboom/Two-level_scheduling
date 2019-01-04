@@ -9,7 +9,7 @@ Status Initblock();//开创空间表
 Status try_alloc(int, int);
 
 Status free(int);
-#define Free 0 //空闲状态
+#define Free -1 //空闲状态
 #define Busy 1 //已用状态
 #define OK 1    //完成
 #define ERROR 0 //出错
