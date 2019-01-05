@@ -409,6 +409,11 @@ void release(pcb* ppcb){
 	int num = 0;
 	if(free(pcb_id) == OK)
 	{
+		
+		printf("\n\n*********释放%d进程所占内存*********\n\n", pcb_id);
+			
+		show(); 
+		
 		ptape = tapelist->head;
 		while( num < ppcb->resource && ptape != NULL)
 		{

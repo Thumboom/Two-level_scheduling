@@ -195,6 +195,7 @@ Status free(int ID)
 		{
 			p->data.state=Free;
 			p->data.ID=Free;
+			
 			if(p->prior->data.state==Free 
 							&& p->prior != block_first)//与前面的空闲块相连
 			{
@@ -226,6 +227,7 @@ Status free(int ID)
 				p->next->next->prior=p;
 				p->next=p->next->next;				
 			}
+				
 				break;	
 		}
 		p=p->next;

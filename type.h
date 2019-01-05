@@ -8,7 +8,7 @@ struct jcb{
     int start_time;   //作业开始调入内存时间 
     int need_time;      //作业运行所需时间 
     int finish_time;  //运行结束时间 
-    int size;       //所需内存时间  
+    int size;       //所需内存大小  
     int resource;		//所需磁带机数量 
     char state;		//作业状态 
     struct jcb * link;   //链接下一个jcb的指针 
