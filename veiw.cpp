@@ -271,6 +271,14 @@ void outputJcb(){
 }
 
 
+int calculate(int a, int b){
+	int ahour = a / 100;
+	int bhour = b / 100;
+	
+	return ahour * 60 + a % 100 - (bhour * 60 + b % 100);
+	
+} 
+
 void outputAll(){	
 	
 	p_jcb = jcb_finish->head;
@@ -285,7 +293,7 @@ void outputAll(){
 								p_jcb->id, p_jcb->name,  p_jcb->arrival_time,p_jcb->need_time, p_jcb->start_time, 
 								p_jcb->finish_time, p_jcb->size,p_jcb->resource );
 								
-		sum = sum + (p_jcb->finish_time - p_jcb->arrival_time);
+		sum = sum + calculate(p_jcb->finish_time,  p_jcb->arrival_time);
 		p_jcb = p_jcb->link;
 		
 	 } 
@@ -293,6 +301,9 @@ void outputAll(){
 	 avg = (sum * 1.0 )/ num;
 	 printf("平均周转时间%f", avg);
 }
+
+
+
 
 
 void timer(){

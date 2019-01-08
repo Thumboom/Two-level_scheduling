@@ -263,7 +263,7 @@ Status try_alloc_tape(pcb* ppcb){
 	
 }
 
-
+//先到先服务 
 void pcb_fcfs(pcb* ppcb){
 	 
 	if(pcb_ready->head == NULL)
@@ -401,7 +401,7 @@ void put_in_pcb_ready(){
 	
 }
 
-
+//释放内存和磁带机 
 void release(pcb* ppcb){
 	
 	int pcb_id = ppcb->id;
@@ -436,7 +436,7 @@ void release(pcb* ppcb){
 }
 
 
-
+//时间片轮转 
 void RR(){
 	
 	if(isRunning == 1 && runtime < piece)
@@ -589,16 +589,10 @@ void RR(){
 			}
 	  	
 	   } 
- 
-	
-	
 	
 }
 
-
-
-
-
+//执行进程 
 void run_pcb(){
 	
 	if( pcb_alg == 3)
@@ -743,9 +737,6 @@ void put_in_jcb_finish(){
 				jcb_run->num--;
 				pjcb->link = NULL;
 				pjcb = next;
-				
-			
-				
 				
 			}
 			else
